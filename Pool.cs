@@ -14,6 +14,9 @@ namespace PoolApi
         public class OptionsValidatorEntity
         {
             public Pool Options { get; set; }
+
+            public virtual Pool Poll1 { get; set; }
+            public virtual Pool Poll2 { get; set; }
             
         }
     }
