@@ -69,18 +69,42 @@ namespace PoolApi.Controllers
         //POST: /poll
         [HttpPost]
         [Route("pool")]
-        public async Task<IActionResult> Post(PoolContext context, int id)
+        public async Task<IActionResult> Post(PoolDatabase context, int id)
         {
-            var values = await _context.Options.ToListAsync();
-
-            if (!ModelState.IsValid)
+            var pollModel = new PoolDatabase()
             {
-                return BadRequest(ModelState);
+                poll_description = context.Description
+            };
+
+                using (var PollDBContextTransaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        _context.Values.Add(pollModel);
+                        _context.SaveChanges();
+                        context.poll_id = pollModel.poll_id;
+
+                        ICollection<Option> options = new HashSet<Option>();
+                        _context.Options.ToList().ForEach(
+                            description => options.Add(
+                                new Option()
+                                {
+                                    option_description = description.ToString(),
+                                    poll_id = context.Id
+                                })
+                            );
+
+                        _context.Options.AddRange(options);
+                        _context.SaveChanges();
+                        PollDBContextTransaction.Commit();
+                    }
+
+                    catch (Exception ex)
+                    {
+                        PollDBContextTransaction.Rollback();
+                    }
             }
-
-            context.SaveChanges();
-
-            return Ok(values);
+            return Ok(new { poll_id = context.Id });
         }
     }
 }
