@@ -68,7 +68,7 @@ namespace PoolApi.Controllers
 
         //POST: /poll
         [HttpPost]
-        [Route("pool")]
+        [Route("poll")]
         public async Task<IActionResult> Post(PoolDatabase context, int id)
         {
             var pollModel = new PoolDatabase()
@@ -76,7 +76,7 @@ namespace PoolApi.Controllers
                 poll_description = context.Description
             };
 
-                using (var PollDBContextTransaction = _context.Database.BeginTransaction())
+                using (var PollDBContext = _context.Database.BeginTransaction())
                 {
                     try
                     {
@@ -96,15 +96,57 @@ namespace PoolApi.Controllers
 
                         _context.Options.AddRange(options);
                         _context.SaveChanges();
-                        PollDBContextTransaction.Commit();
+                        PollDBContext.Commit();
                     }
 
                     catch (Exception ex)
                     {
-                        PollDBContextTransaction.Rollback();
+                        PollDBContext.Rollback();
                     }
             }
             return Ok(new { poll_id = context.Id });
+        }
+
+        //Post	/poll/:id/vote
+        [HttpPost]
+        [Route("poll/{id}/vote")]
+        public async Task<IActionResult> PostVote(OptionDatabase context, int id, int option_id)
+        {
+            Option optionVoted = context;
+
+            try
+            {
+                optionVoted = _context.Options.
+                    Where(o => o.poll_id == id && o.option_id == context.option_id)
+                        .First();
+            }
+            catch (Exception)
+            {
+                return NotFound();
+            }
+
+            using (var PollDBContext = _context.Database.BeginTransaction())
+            {
+                try
+                {
+                    var vote = new Vote()
+                    {
+                        option_id = optionVoted.option_id,
+                        date = DateTime.Now
+                    };
+
+                    _context.Votes.Add(vote);
+                    _context.SaveChanges();
+                    PollDBContext.Commit();
+                }
+
+                catch (Exception ex)
+                {
+                    PollDBContext.Rollback();
+                }
+            }
+
+            return Ok(new { option_id = context.option_id});
         }
     }
 }
