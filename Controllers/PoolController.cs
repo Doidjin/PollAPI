@@ -49,7 +49,7 @@ namespace PoolApi.Controllers
         {
             var views = _context.Views.Where(x => x.poll_id == id).Count();
 
-            if (views == null)
+            if (views == 0)
             {
                 return NotFound();
             }
@@ -120,7 +120,7 @@ namespace PoolApi.Controllers
                     Where(o => o.poll_id == id && o.option_id == context.option_id)
                         .First();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return NotFound();
             }
